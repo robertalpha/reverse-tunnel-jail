@@ -14,7 +14,7 @@ So simply pass your ssh public key as env var AUTHORIZED_KEYS to the container a
 
 # Start container with a key: 
 Running the command:
-```docker run -e AUTHORIZED_KEYS="$(cat .ssh/id-rsa.pub)" robertnoyb/restricted-reverse-tunnel```
+```docker run -e AUTHORIZED_KEYS="$(cat ~/.ssh/id_rsa.pub)" robertnoyb/restricted-reverse-tunnel```
 
 gives output:
 ```
