@@ -3,8 +3,6 @@ FROM alpine:latest
 # ssh-keygen -A generates all necessary host keys (rsa, dsa, ecdsa, ed25519) at default location.
 RUN    apk update \
     && apk add openssh \
-    && mkdir /root/.ssh \
-    && chmod 0700 /root/.ssh \
     && ssh-keygen -A \
     && adduser -D -s /bin/false tunuser \
     && passwd -u tunuser \
@@ -13,6 +11,7 @@ RUN    apk update \
     && touch /home/tunuser/.ssh/authorized_keys \
     && chmod 0600 /home/tunuser/.ssh/authorized_keys \
     && chown -R tunuser:tunuser /home/tunuser \
+    && sed -i s/^#PermitRootLogin\ prohibit-password/PermitRootLogin\ no/ /etc/ssh/sshd_config \
     && sed -i s/^#PasswordAuthentication\ yes/PasswordAuthentication\ no/ /etc/ssh/sshd_config \
     && sed -i s/^#AllowAgentForwarding\ yes/AllowAgentForwarding\ no/ /etc/ssh/sshd_config
 
