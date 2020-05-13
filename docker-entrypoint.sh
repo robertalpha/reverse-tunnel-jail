@@ -7,9 +7,17 @@ fi
 echo "Populating /home/tunuser/.ssh/authorized_keys with the value from AUTHORIZED_KEYS env variable ..."
 echo "${AUTHORIZED_KEYS}" > /home/tunuser/.ssh/authorized_keys
 
+if [ -n "${OPEN_PORTS}" ]; then
+  echo "overriding permitted ports to include: ${OPEN_PORTS}"
+  PORT_STRING=$(echo "$OPEN_PORTS" | sed -r 's/,/\ 127\.0\.0\.1:/g')
+  PORT_STRING=$(echo "127.0.0.1:$PORT_STRING")
+  PORT_STRING=$(echo "$PORT_STRING" | sed -r 's/\s/\\ /g')
+  sed -i "s/PermitOpen\ 127\.0\.0\.1:2022/PermitOpen\ $PORT_STRING/g" /etc/ssh/sshd_config
+fi
+
 CONTAINER_INTERNAL_IP=$(/sbin/ip route|awk '/src/ { print $7 }')
 
-echo "Running. To test setup run:"
+echo "Running. To test setup run (replace 2022 if you're using OPEN_PORTS):"
 echo " ssh -TN -R 2022:localhost:8022  tunuser@$CONTAINER_INTERNAL_IP"
 echo "this tunnels you hosts port 8022 to the container's port 2022"
 
