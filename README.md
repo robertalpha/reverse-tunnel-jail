@@ -1,6 +1,30 @@
 # The simplest/smallest and secure reverse-tunnel SSH Server
 This is a very simple alpine based SSHD server, listening on port 22 to receive a single incoming reverse tunnel connection. This is for the sole purpose of opening a reverse tunnel in a secure and convenient way.
 
+An example usecase would be to make backups over the internet to an offsite host without a dns record. This machine can be setup to automatically create a revert ssh-tunnel connection to a host with a stable dns record. Any nas can then connect to that reverse tunnel and run a backup over that connection. The following diagram shows this usecase: 
+```
++--------------------------offsite backup--------------------------------+     +-----------------------------central-host.com-(stable-dns)--------------------------------+
+|                     ~/.ssh/id-rsa.pub = xyz                            |     |                                                                                          |
+|                                                                        |     |                                                                                          |
+|                                                                        |     | +----docker-host-----------------------------------------------------------------------+ |
+|   autossh -M 0 -f -o "ExitOnForwardFailure=yes"          \             |     | |                                                                                      | |
+|   -o "ServerAliveCountMax 3" -o "ServerAliveInterval 60" \          +------------>  docker run -e AUTHORIZED_KEYS=xyz -p 8022:2022 robertnoyb/reverse-tunnel-jail     | |
+|   -p 8022 -TN -R \*:2022:localhost:22 tunuser@central-host.com         |     | |                                                                                      | |
+|                                                                     <---------------+                                                                                 | |
+|                                                                        |     | |    |                                                                                 | |
++------------------------------------------------------------------------+     | +--------------------------------------------------------------------------------------+ |
+                                                                               |      |                                                                                   |
+                                                                               |      |                                                                                   |
+                                                                               |      +                                                                                   |
+                                                                               |    ssh -p 8022 offsite-user@docker-host                                                  |
+                                                                               |                                                                                          |
+                                                                               +------------------------------------------------------------------------------------------+
+
+```
+
+Making use of autossh within a service will make sure connections are as stable as possible.
+
+
 ## Security features:
 * The root user account is disabled for ssh access.
 * The only authentication enabled over ssh is key based authentication. Repeat: Password based authentication is disabled.
