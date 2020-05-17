@@ -3,23 +3,22 @@ This is a very simple alpine based SSHD server, listening on port 22 to receive 
 
 An example usecase would be to make backups over the internet to an offsite host without a dns record. This machine can be setup to automatically create a revert ssh-tunnel connection to a host with a stable dns record. Any nas can then connect to that reverse tunnel and run a backup over that connection. The following diagram shows this usecase: 
 ```
-+--------------------------offsite backup--------------------------------+     +-----------------------------central-host.com-(stable-dns)--------------------------------+
-|                     ~/.ssh/id-rsa.pub = xyz                            |     |                                                                                          |
-|                                                                        |     |                                                                                          |
-|                                                                        |     | +----docker-host-----------------------------------------------------------------------+ |
-|   autossh -M 0 -f -o "ExitOnForwardFailure=yes"          \             |     | |                                                                                      | |
-|   -o "ServerAliveCountMax 3" -o "ServerAliveInterval 60" \          +------------>  docker run -e AUTHORIZED_KEYS=xyz -p 8022:2022 robertnoyb/reverse-tunnel-jail     | |
-|   -p 8022 -TN -R \*:2022:localhost:22 tunuser@central-host.com         |     | |                                                                                      | |
-|                                                                     <---------------+                                                                                 | |
-|                                                                        |     | |    |                                                                                 | |
-+------------------------------------------------------------------------+     | +--------------------------------------------------------------------------------------+ |
-                                                                               |      |                                                                                   |
-                                                                               |      |                                                                                   |
-                                                                               |      +                                                                                   |
-                                                                               |    ssh -p 8022 offsite-user@docker-host                                                  |
-                                                                               |                                                                                          |
-                                                                               +------------------------------------------------------------------------------------------+
-
++--------------------------offsite backup--------------------------------+     +-------------------central-host.com-(stable-dns)---------------+
+|                     ~/.ssh/id-rsa.pub = xyz                            |     |                   open ssh port = 8022                        |
+|                                                                        |     |                                                               |
+|                                                                        |     | +----docker-host--------------------------------------------+ |
+|   autossh -M 0 -f -o "ExitOnForwardFailure=yes"          \             |     | |                                                           | |
+|   -o "ServerAliveCountMax 3" -o "ServerAliveInterval 60" \          +------------>  docker run -e AUTHORIZED_KEYS=xyz -p 8055:2022 \       | |
+|   -p 8022 -TN -R \*:2022:127.0.0.1:22 tunuser@central-host.com         |     | |            -p 8022:22 robertnoyb/reverse-tunnel-jail      | |
+|                                                                     <---------------+                                                      | |
+|                                                                        |     | |    |                                                      | |
++------------------------------------------------------------------------+     | +-----------------------------------------------------------+ |
+                                                                               |      |                                                        |
+                                                                               |      |                                                        |
+                                                                               |      +                                                        |
+                                                                               |    ssh -p 5022 offsite-user@docker-host                       |
+                                                                               |                                                               |
+                                                                               +---------------------------------------------------------------+
 ```
 
 Making use of autossh within a service will make sure connections are as stable as possible.
@@ -38,7 +37,7 @@ So simply pass your ssh public key as env var AUTHORIZED_KEYS to the container a
 
 # Start container with a key: 
 Running the command:
-```docker run -e AUTHORIZED_KEYS="$(cat ~/.ssh/id_rsa.pub)" robertnoyb/restricted-reverse-tunnel```
+```docker run -e AUTHORIZED_KEYS="$(cat ~/.ssh/id_rsa.pub)" robertnoyb/reverse-tunnel-jail```
 
 gives output:
 ```
@@ -56,5 +55,5 @@ ssh -TN -R 2022:localhost:8022  tunuser@172.17.0.2
 ```
 
 # Credits
-* Thanks to Eficode Praqma for sharing the code for their "The simplest/smallest SSH Server" container, allowing me to fork build upon. That project is found here: https://github.com/Praqma/alpine-sshd
+* Thanks to Eficode Praqma for sharing the code for their "The simplest/smallest SSH Server" container, allowing me to build upon. That project is found here: https://github.com/Praqma/alpine-sshd
 * Thanks for the feedback @Janoz https://github.com/Janoz-NL
